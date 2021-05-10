@@ -1,13 +1,14 @@
 const Web3 = require("web3");
 const BnbPricePredictionAbi = require("./abi/BnbPricePrediction.json");
+const { getRandomNodeUrl } = require("./nodeUrls");
+const peanutButter = require("./peanut-butter.json");
 
 const PAYOUT_CAP = 1.7;
-const BET_AMOUNT = 0.01;
-const WALLET_PKEY = "0x0000000000000000000000000000000000000000";
+const BET_AMOUNT = 0.001;
 
 const Position = { Bull: "Bull", Bear: "Bear", None: "None" };
 const BetStatus = {
-  Pending: "Pending",
+  Running: "Running",
   BettingBull: "Betting Bull",
   BettingBear: "Betting Bear",
   Confirmed: "Confirmed",
@@ -16,14 +17,19 @@ const BetStatus = {
   Loss: "Loss",
 };
 
-const web3 = new Web3(
-  new Web3.providers.HttpProvider("https://bsc-dataseed3.ninicoin.io/")
-);
+// web3 initialization
+const nodeUrl = getRandomNodeUrl();
+const web3 = new Web3(new Web3.providers.HttpProvider(nodeUrl));
+const account = web3.eth.accounts.privateKeyToAccount(peanutButter[0]);
+web3.eth.accounts.wallet.add(account);
+web3.eth.defaultAccount = account.address;
 const contract = new web3.eth.Contract(
   BnbPricePredictionAbi,
-  "0x516ffd7d1e0ca40b1879935b2de87cb20fc1124b"
+  "0x516ffd7d1e0ca40b1879935b2de87cb20fc1124b",
+  { from: account.address }
 );
-const gweiToBnbRatio = 1e18;
+
+const weiRatio = 1e18;
 const remainingBlockToDelayScale = [
   [10, 1000],
   [20, 2000],
@@ -48,9 +54,9 @@ const computePosition = (bullPayout, bearPayout, payoutCap) =>
     : Position.Bear;
 
 const computeRoundStats = (round, payoutCap) => {
-  totalAmountBnb = round.totalAmount / gweiToBnbRatio;
-  bullAmountBnb = round.bullAmount / gweiToBnbRatio;
-  bearAmountBnb = round.bearAmount / gweiToBnbRatio;
+  totalAmountBnb = round.totalAmount / weiRatio;
+  bullAmountBnb = round.bullAmount / weiRatio;
+  bearAmountBnb = round.bearAmount / weiRatio;
   bullPayout = round.totalAmount / round.bullAmount;
   bearPayout = round.totalAmount / round.bearAmount;
   predictedPosition = computePosition(bullPayout, bearPayout, payoutCap);
@@ -67,6 +73,11 @@ const computeRoundStats = (round, payoutCap) => {
   };
 };
 
+const createIterator = (start = 0) => {
+  let index = start;
+  return { get: () => index, inc: () => index++, dec: () => index-- };
+};
+
 const printSeparator = (length = 40) =>
   console.log(new Array(length).fill("-").join(""));
 
@@ -77,6 +88,21 @@ const printSeparator = (length = 40) =>
     // metrics
     const startTime = new Date();
 
+    // exp
+    // printSeparator();
+    // const betFn = contract.methods.betBull();
+    // const estimatedGas = await betFn.estimateGas();
+    // console.log(estimatedGas);
+
+    // return;
+
+    const paused = await contract.methods.paused().call();
+    if (paused) {
+      console.log("Prediction is currently paused...");
+      setTimeout(run, 10000);
+      return;
+    }
+
     const epoch = await contract.methods.currentEpoch().call();
     const [
       blockNumber,
@@ -85,25 +111,22 @@ const printSeparator = (length = 40) =>
       prevRound,
     ] = await Promise.all([
       web3.eth.getBlockNumber(),
-      web3.eth.getBalance(WALLET_PKEY),
+      web3.eth.getBalance(account.address),
       contract.methods.rounds(epoch).call(),
       contract.methods.rounds(epoch - 2).call(),
     ]);
 
-    console.log("\x1Bc");
-    console.log("🔮 Prediction Bot 🤖");
-
-    // computer stats
+    // compute round additional stats
     const remainingBlocks = openRound.lockBlock - blockNumber;
     const openRoundStats = computeRoundStats(openRound, PAYOUT_CAP);
     const prevRoundStats = computeRoundStats(prevRound, PAYOUT_CAP);
 
     // set the bets
     if (!betsStatus[epoch]) {
-      betsStatus[epoch] = BetStatus.Pending;
+      betsStatus[epoch] = BetStatus.Running;
     }
 
-    if (betsStatus[epoch] === BetStatus.Pending) {
+    if (betsStatus[epoch] === BetStatus.Running) {
       if (remainingBlocks < 0) {
         betsStatus[epoch] = BetStatus.NoGo;
       } else if (remainingBlocks < 3) {
@@ -123,12 +146,11 @@ const printSeparator = (length = 40) =>
             newStatus === BetStatus.BettingBull
               ? contract.methods.betBull()
               : contract.methods.betBear();
-
           // const estimatedGas = await betFn.estimateGas({ from: WALLET_PKEY });
           // console.log(estimatedGas);
-
-          // const betTx = await betFn.call({ from: WALLET_PKEY });
-          // console.log(betTx);
+          // const betTx = await betFn.send({ from: account.address });
+          const betTx = { from: account.address, to: contract.address };
+          console.log(betTx);
         }
       }
     }
@@ -151,7 +173,11 @@ const printSeparator = (length = 40) =>
     }
 
     // print status
+    console.log("\x1Bc");
+    console.log("🔮 Prediction Bot 🤖");
+    console.log(`⚡️ ${nodeUrl}`);
     printSeparator();
+
     console.log(
       `previous prediction: ${
         prevRoundStats.predictedPosition === Position.none
@@ -182,17 +208,18 @@ const printSeparator = (length = 40) =>
         remainingBlocks <= 10 ? " 🔔" : ""
       }`
     );
-
     printSeparator();
+
     console.log(`bets: ${JSON.stringify(betsStatus, null, 2)}`);
-    console.log(
-      `wallet balance: ${(walletBalance / gweiToBnbRatio).toFixed(2)} BNB`
-    );
-
+    console.log(`wallet balance: ${(walletBalance / weiRatio).toFixed(2)} BNB`);
     printSeparator();
+
     console.log(`time: ${new Date() - startTime}ms`);
     const delay = computeDelay(remainingBlocks);
     console.log(`refresh rate: ${delay}ms`);
+    printSeparator();
+
+    // schedule next run
     setTimeout(run, delay);
   };
 
