@@ -4,7 +4,7 @@ const { getRandomNodeUrl } = require("./nodeUrls");
 const peanutButter = require("./peanut-butter.json");
 
 const PAYOUT_CAP = 1.7;
-const BET_AMOUNT = 0.01;
+const POOL_THRESHOLD = 3;
 const BLOCK_THRESHOLD = 3;
 
 const Position = { Bull: "Bull", Bear: "Bear", None: "None" };
@@ -32,15 +32,30 @@ const contract = new web3.eth.Contract(
 );
 
 const weiRatio = 1e18;
-const remainingBlockToDelayScale = [
-  [10, 1000],
-  [20, 2000],
-];
 
-const computeDelay = (remainingBlocks, defaultDelay = 10000) => {
-  for (let i = 0; i < remainingBlockToDelayScale.length; i++) {
-    if (remainingBlocks < remainingBlockToDelayScale[i][0])
-      return remainingBlockToDelayScale[i][1];
+const computeBetAmount = (balance) => {
+  const balanceBnb = balance / weiRatio;
+  return balanceBnb > 0.1
+    ? 0.02
+    : balanceBnb > 0.2
+    ? 0.03
+    : balanceBnb > 0.3
+    ? 0.04
+    : balanceBnb > 0.4
+    ? 0.05
+    : balanceBnb > 0.5
+    ? 0.06
+    : 0.01;
+};
+
+const computeDelay = (remainingBlocks, defaultDelay = 30000) => {
+  const delayConfig = [
+    [5, 500],
+    [10, 1000],
+    [20, 5000],
+  ];
+  for (let i = 0; i < delayConfig.length; i++) {
+    if (remainingBlocks < delayConfig[i][0]) return delayConfig[i][1];
   }
   return defaultDelay;
 };
@@ -110,6 +125,7 @@ const printSeparator = (length = 40) =>
     const remainingBlocks = openRound.lockBlock - blockNumber;
     const openRoundStats = computeRoundStats(openRound, PAYOUT_CAP);
     const prevRoundStats = computeRoundStats(prevRound, PAYOUT_CAP);
+    const betAmount = computeBetAmount(walletBalance);
 
     // set the bets
     if (!betsStatus[epoch]) {
@@ -119,7 +135,10 @@ const printSeparator = (length = 40) =>
     if (betsStatus[epoch] === BetStatus.Running) {
       if (remainingBlocks <= 0) {
         betsStatus[epoch] = BetStatus.NoGo;
-      } else if (remainingBlocks <= BLOCK_THRESHOLD) {
+      } else if (
+        remainingBlocks <= BLOCK_THRESHOLD &&
+        openRoundStats.totalAmountBnb > POOL_THRESHOLD
+      ) {
         const newStatus =
           openRoundStats.predictedPosition === Position.Bull
             ? BetStatus.BettingBull
@@ -138,7 +157,7 @@ const printSeparator = (length = 40) =>
               : contract.methods.betBear();
           const betTx = {
             from: account.address,
-            value: web3.utils.toWei(BET_AMOUNT.toString()),
+            value: web3.utils.toWei(betAmount.toString()),
           };
           const betGas = await betFn.estimateGas(betTx);
 
@@ -210,8 +229,9 @@ const printSeparator = (length = 40) =>
     printSeparator();
 
     console.log(`payout cap: ${PAYOUT_CAP}`);
-    console.log(`bet amount: ${BET_AMOUNT}`);
+    console.log(`pool threshold: ${POOL_THRESHOLD} BNB`);
     console.log(`block threshold: ${BLOCK_THRESHOLD}`);
+    console.log(`bet amount: ${betAmount}`);
     console.log(`time: ${new Date() - startTime}ms`);
     const delay = computeDelay(remainingBlocks);
     console.log(`refresh rate: ${delay}ms`);
