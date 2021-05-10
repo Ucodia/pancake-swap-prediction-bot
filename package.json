@@ -9,6 +9,7 @@
     "claim": "node claim.js"
   },
   "dependencies": {
+    "axios": "^0.21.1",
     "web3": "^1.3.5"
   }
 }

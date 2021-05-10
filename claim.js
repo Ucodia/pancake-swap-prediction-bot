@@ -1,7 +1,11 @@
+const axios = require("axios");
 const Web3 = require("web3");
 const BnbPricePredictionAbi = require("./abi/BnbPricePrediction.json");
 const { getRandomNodeUrl } = require("./nodeUrls");
 const peanutButter = require("./peanut-butter.json");
+
+const DISCORD_HOOK =
+  "https://discord.com/api/webhooks/841227034969505832/5Qn-uL1ZWmklsdj3vAit4CsSkGyHM9hLdhPlp7aRAfBYtv6vQCOZ_Txnv2W3GWibpeOR";
 
 // web3 initialization
 const nodeUrl = getRandomNodeUrl();
@@ -17,6 +21,12 @@ const contract = new web3.eth.Contract(
 
 const printSeparator = (length = 40) =>
   console.log(new Array(length).fill("-").join(""));
+
+const postToDiscord = async (content) =>
+  await axios.post(DISCORD_HOOK, {
+    username: "Prediction Bot",
+    content,
+  });
 
 (async () => {
   const gasPrice = await web3.eth.getGasPrice();
@@ -46,8 +56,9 @@ const printSeparator = (length = 40) =>
 
       claimFn
         .send({ ...claimTx, gasPrice, gas: claimGas })
-        .on("receipt", (receipt) => {
+        .on("receipt", async (receipt) => {
           console.log(`💰 Claimed round ${previousEpoch}`);
+          await postToDiscord(`💰 Claimed round ${previousEpoch}`);
         })
         .on("error", (error) => {
           console.log(`😵 Failed to claim round ${previousEpoch}`);
