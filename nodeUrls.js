@@ -17,10 +17,6 @@ const randomInt = (min, max) => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
-const getRandomNodeUrl = () => {
-  const url = endpoints[randomInt(0, endpoints.length - 1)];
-  console.log(url);
-  return url;
-};
+const getRandomNodeUrl = () => endpoints[randomInt(0, endpoints.length - 1)];
 
 module.exports = { getRandomNodeUrl, nodeUrls: endpoints };
