@@ -75,11 +75,6 @@ const computeRoundStats = (round, payoutCap) => {
   };
 };
 
-const createIterator = (start = 0) => {
-  let index = start;
-  return { get: () => index, inc: () => index++, dec: () => index-- };
-};
-
 const printSeparator = (length = 40) =>
   console.log(new Array(length).fill("-").join(""));
 
