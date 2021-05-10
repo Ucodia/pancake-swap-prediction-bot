@@ -21,25 +21,24 @@ const printSeparator = (length = 40) =>
 (async () => {
   const gasPrice = await web3.eth.getGasPrice();
 
+  console.log("\x1Bc");
   console.log("🔮 Prediction Auto Claim 💰");
   console.log(`⚡️ ${nodeUrl}`);
   printSeparator();
 
   const autoClaim = async () => {
     const openEpoch = await contract.methods.currentEpoch().call();
-    // const previousEpoch = openEpoch - 2;
-    // const claimable = await contract.methods
-    //   .claimable(previousEpoch, account.address)
-    //   .call();
-    const previousEpoch = 1234;
-    const claimable = true;
+    const previousEpoch = openEpoch - 2;
+    const claimable = await contract.methods
+      .claimable(previousEpoch, account.address)
+      .call();
 
     console.log(
-      `Round ${previousEpoch} is ${!claimable ? "NOT" : ""} claimable`
+      `Round ${previousEpoch} is ${!claimable ? "NOT " : ""}claimable`
     );
 
     if (claimable) {
-      const claimFn = contract.methods.claim(e);
+      const claimFn = contract.methods.claim(previousEpoch);
       const claimTx = {
         from: account.address,
       };
@@ -56,7 +55,7 @@ const printSeparator = (length = 40) =>
     }
 
     // claim every minute
-    // setTimeout(autoClaim, 60 * 1000);
+    setTimeout(autoClaim, 5 * 60 * 1000);
   };
 
   autoClaim();
