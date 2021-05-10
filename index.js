@@ -4,7 +4,7 @@ const { getRandomNodeUrl } = require("./nodeUrls");
 const peanutButter = require("./peanut-butter.json");
 
 const PAYOUT_CAP = 1.7;
-const POOL_THRESHOLD = 3;
+const POOL_THRESHOLD = 1.0;
 const BLOCK_THRESHOLD = 3;
 
 const Position = { Bull: "Bull", Bear: "Bear", None: "None" };
@@ -50,7 +50,7 @@ const computeBetAmount = (balance) => {
 
 const computeDelay = (remainingBlocks, defaultDelay = 30000) => {
   const delayConfig = [
-    [5, 500],
+    [5, 750],
     [10, 1000],
     [20, 5000],
   ];
@@ -230,7 +230,7 @@ const printSeparator = (length = 40) =>
 
     console.log(`payout cap: ${PAYOUT_CAP}`);
     console.log(`pool threshold: ${POOL_THRESHOLD} BNB`);
-    console.log(`block threshold: ${BLOCK_THRESHOLD}`);
+    console.log(`block threshold: ${BLOCK_THRESHOLD} last`);
     console.log(`bet amount: ${betAmount}`);
     console.log(`time: ${new Date() - startTime}ms`);
     const delay = computeDelay(remainingBlocks);
