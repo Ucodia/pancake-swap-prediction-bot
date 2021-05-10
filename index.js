@@ -4,7 +4,7 @@ const { getRandomNodeUrl } = require("./nodeUrls");
 const peanutButter = require("./peanut-butter.json");
 
 const PAYOUT_CAP = 1.7;
-const POOL_THRESHOLD = 1.0;
+const POOL_THRESHOLD = 3.0;
 const BLOCK_THRESHOLD = 3;
 
 const Position = { Bull: "Bull", Bear: "Bear", None: "None" };
@@ -103,8 +103,8 @@ const printSeparator = (length = 40) =>
 
     const paused = await contract.methods.paused().call();
     if (paused) {
-      console.log("Prediction is currently paused...");
-      setTimeout(run, 10000);
+      console.log(startTime, "Prediction is currently paused...");
+      setTimeout(autoBet, 60 * 1000);
       return;
     }
 

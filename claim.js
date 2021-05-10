@@ -37,6 +37,15 @@ const postToDiscord = async (content) =>
   printSeparator();
 
   const autoClaim = async () => {
+    const startTime = new Date();
+
+    const paused = await contract.methods.paused().call();
+    if (paused) {
+      console.log(startTime, "Prediction is currently paused...");
+      setTimeout(autoClaim, 60 * 1000);
+      return;
+    }
+
     const openEpoch = await contract.methods.currentEpoch().call();
     const previousEpoch = openEpoch - 2;
     const claimable = await contract.methods
