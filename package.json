@@ -5,7 +5,8 @@
   "license": "MIT",
   "main": "index.js",
   "scripts": {
-    "start": "node ."
+    "start": "node .",
+    "claim": "node claim.js"
   },
   "dependencies": {
     "web3": "^1.3.5"

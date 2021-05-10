@@ -4,7 +4,8 @@ const { getRandomNodeUrl } = require("./nodeUrls");
 const peanutButter = require("./peanut-butter.json");
 
 const PAYOUT_CAP = 1.7;
-const BET_AMOUNT = 0.001;
+const BET_AMOUNT = 0.01;
+const BLOCK_THRESHOLD = 3;
 
 const Position = { Bull: "Bull", Bear: "Bear", None: "None" };
 const BetStatus = {
@@ -12,6 +13,7 @@ const BetStatus = {
   BettingBull: "Betting Bull",
   BettingBear: "Betting Bear",
   Confirmed: "Confirmed",
+  Failed: "Failed",
   NoGo: "No Go",
   Win: "Win",
   Loss: "Loss",
@@ -82,19 +84,12 @@ const printSeparator = (length = 40) =>
   console.log(new Array(length).fill("-").join(""));
 
 (async () => {
+  const gasPrice = await web3.eth.getGasPrice();
   const betsStatus = {};
 
-  const run = async () => {
+  const autoBet = async () => {
     // metrics
     const startTime = new Date();
-
-    // exp
-    // printSeparator();
-    // const betFn = contract.methods.betBull();
-    // const estimatedGas = await betFn.estimateGas();
-    // console.log(estimatedGas);
-
-    // return;
 
     const paused = await contract.methods.paused().call();
     if (paused) {
@@ -129,7 +124,7 @@ const printSeparator = (length = 40) =>
     if (betsStatus[epoch] === BetStatus.Running) {
       if (remainingBlocks < 0) {
         betsStatus[epoch] = BetStatus.NoGo;
-      } else if (remainingBlocks < 3) {
+      } else if (remainingBlocks <= BLOCK_THRESHOLD) {
         const newStatus =
           openRoundStats.predictedPosition === Position.Bull
             ? BetStatus.BettingBull
@@ -146,11 +141,20 @@ const printSeparator = (length = 40) =>
             newStatus === BetStatus.BettingBull
               ? contract.methods.betBull()
               : contract.methods.betBear();
-          // const estimatedGas = await betFn.estimateGas({ from: WALLET_PKEY });
-          // console.log(estimatedGas);
-          // const betTx = await betFn.send({ from: account.address });
-          const betTx = { from: account.address, to: contract.address };
-          console.log(betTx);
+          const betTx = {
+            from: account.address,
+            value: web3.utils.toWei(BET_AMOUNT.toString()),
+          };
+          const betGas = await betFn.estimateGas(betTx);
+
+          betFn
+            .send({ ...betTx, gasPrice, gas: betGas })
+            .on("receipt", (receipt) => {
+              betsStatus[epoch] = BetStatus.Confirmed;
+            })
+            .on("error", (error) => {
+              betsStatus[epoch] = BetStatus.Failed;
+            });
         }
       }
     }
@@ -163,10 +167,6 @@ const printSeparator = (length = 40) =>
     ) {
       if (prevRoundStats.predictedPosition === prevRoundStats.actualPosition) {
         betsStatus[prevRound.epoch] = BetStatus.Win;
-        // const claimTx = await contract.methods
-        //   .claim(prevRound.epoch)
-        //   .call({ from: WALLET_PKEY });
-        // console.log(claimTx);
       } else {
         betsStatus[prevRound.epoch] = BetStatus.Loss;
       }
@@ -180,7 +180,7 @@ const printSeparator = (length = 40) =>
 
     console.log(
       `previous prediction: ${
-        prevRoundStats.predictedPosition === Position.none
+        prevRoundStats.predictedPosition === Position.None
           ? "No go ✋"
           : prevRoundStats.predictedPosition === prevRoundStats.actualPosition
           ? "Good 👍"
@@ -211,17 +211,20 @@ const printSeparator = (length = 40) =>
     printSeparator();
 
     console.log(`bets: ${JSON.stringify(betsStatus, null, 2)}`);
-    console.log(`wallet balance: ${(walletBalance / weiRatio).toFixed(2)} BNB`);
+    console.log(`wallet balance: ${(walletBalance / weiRatio).toFixed(4)} BNB`);
     printSeparator();
 
+    console.log(`payout cap: ${PAYOUT_CAP}`);
+    console.log(`bet amount: ${BET_AMOUNT}`);
+    console.log(`block threshold: ${BLOCK_THRESHOLD}`);
     console.log(`time: ${new Date() - startTime}ms`);
     const delay = computeDelay(remainingBlocks);
     console.log(`refresh rate: ${delay}ms`);
     printSeparator();
 
     // schedule next run
-    setTimeout(run, delay);
+    setTimeout(autoBet, delay);
   };
 
-  run();
+  autoBet();
 })();
