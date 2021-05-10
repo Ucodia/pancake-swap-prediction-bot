@@ -122,7 +122,7 @@ const printSeparator = (length = 40) =>
     }
 
     if (betsStatus[epoch] === BetStatus.Running) {
-      if (remainingBlocks < 0) {
+      if (remainingBlocks <= 0) {
         betsStatus[epoch] = BetStatus.NoGo;
       } else if (remainingBlocks <= BLOCK_THRESHOLD) {
         const newStatus =
@@ -130,7 +130,7 @@ const printSeparator = (length = 40) =>
             ? BetStatus.BettingBull
             : openRoundStats.predictedPosition === Position.Bear
             ? BetStatus.BettingBear
-            : BetStatus.NoGo;
+            : BetStatus.Running;
         betsStatus[epoch] = newStatus;
 
         // if betting status, execute bet
