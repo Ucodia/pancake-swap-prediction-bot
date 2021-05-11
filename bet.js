@@ -103,23 +103,22 @@ const printSeparator = (length = 40) =>
 
     const paused = await contract.methods.paused().call();
     if (paused) {
-      console.log(startTime, "Prediction is currently paused...");
-      setTimeout(autoBet, 60 * 1000);
+      console.log(
+        startTime,
+        "Prediction is currently paused, refreshing in 5 minutes..."
+      );
+      setTimeout(autoBet, 5 * 60 * 1000);
       return;
     }
 
     const epoch = await contract.methods.currentEpoch().call();
-    const [
-      blockNumber,
-      walletBalance,
-      openRound,
-      prevRound,
-    ] = await Promise.all([
-      web3.eth.getBlockNumber(),
-      web3.eth.getBalance(account.address),
-      contract.methods.rounds(epoch).call(),
-      contract.methods.rounds(epoch - 2).call(),
-    ]);
+    const [blockNumber, walletBalance, openRound, prevRound] =
+      await Promise.all([
+        web3.eth.getBlockNumber(),
+        web3.eth.getBalance(account.address),
+        contract.methods.rounds(epoch).call(),
+        contract.methods.rounds(epoch - 2).call(),
+      ]);
 
     // compute round additional stats
     const remainingBlocks = openRound.lockBlock - blockNumber;

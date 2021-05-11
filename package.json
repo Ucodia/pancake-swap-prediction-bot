@@ -1,11 +1,11 @@
 {
   "name": "prediction-bot",
   "version": "1.0.0",
-  "author": "Ucodia",
+  "author": "Ucodia -> Lionel Ringenbach",
   "license": "MIT",
   "main": "index.js",
   "scripts": {
-    "start": "node .",
+    "bet": "node bet.js",
     "claim": "node claim.js"
   },
   "dependencies": {

@@ -41,8 +41,11 @@ const postToDiscord = async (content) =>
 
     const paused = await contract.methods.paused().call();
     if (paused) {
-      console.log(startTime, "Prediction is currently paused...");
-      setTimeout(autoClaim, 60 * 1000);
+      console.log(
+        startTime,
+        "Prediction is currently paused, refreshing in 5 minutes..."
+      );
+      setTimeout(autoClaim, 5 * 60 * 1000);
       return;
     }
 
