@@ -1,17 +1,8 @@
-const axios = require("axios");
 const { nodeUrl, web3, account, contract } = require("./config");
-
-const DISCORD_HOOK =
-  "https://discord.com/api/webhooks/841227034969505832/5Qn-uL1ZWmklsdj3vAit4CsSkGyHM9hLdhPlp7aRAfBYtv6vQCOZ_Txnv2W3GWibpeOR";
+const { postToDiscord } = require("./discord");
 
 const printSeparator = (length = 40) =>
   console.log(new Array(length).fill("-").join(""));
-
-const postToDiscord = async (content) =>
-  await axios.post(DISCORD_HOOK, {
-    username: "Prediction Bot",
-    content,
-  });
 
 (async () => {
   const gasPrice = await web3.eth.getGasPrice();
