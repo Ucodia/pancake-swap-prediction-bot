@@ -1,7 +1,4 @@
-const Web3 = require("web3");
-const BnbPricePredictionAbi = require("./abi/BnbPricePrediction.json");
-const { getRandomNodeUrl } = require("./nodeUrls");
-const peanutButter = require("./peanut-butter.json");
+const { nodeUrl, web3, account, contract } = require("./config");
 
 const PAYOUT_CAP = 1.7;
 const POOL_THRESHOLD = 3.0;
@@ -18,18 +15,6 @@ const BetStatus = {
   Win: "Win",
   Loss: "Loss",
 };
-
-// web3 initialization
-const nodeUrl = getRandomNodeUrl();
-const web3 = new Web3(new Web3.providers.HttpProvider(nodeUrl));
-const account = web3.eth.accounts.privateKeyToAccount(peanutButter[0]);
-web3.eth.accounts.wallet.add(account);
-web3.eth.defaultAccount = account.address;
-const contract = new web3.eth.Contract(
-  BnbPricePredictionAbi,
-  "0x516ffd7d1e0ca40b1879935b2de87cb20fc1124b",
-  { from: account.address }
-);
 
 const weiRatio = 1e18;
 
@@ -103,6 +88,10 @@ const printSeparator = (length = 40) =>
 
     const paused = await contract.methods.paused().call();
     if (paused) {
+      console.log("\x1Bc");
+      console.log("🔮 Prediction Bot 🤖");
+      console.log(`⚡️ ${nodeUrl}`);
+      printSeparator();
       console.log(
         startTime,
         "Prediction is currently paused, refreshing in 5 minutes..."
