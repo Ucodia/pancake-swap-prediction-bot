@@ -1,10 +1,11 @@
+require("dotenv").config();
 const axios = require("axios");
 
-const DISCORD_HOOK =
-  "https://discord.com/api/webhooks/841227034969505832/5Qn-uL1ZWmklsdj3vAit4CsSkGyHM9hLdhPlp7aRAfBYtv6vQCOZ_Txnv2W3GWibpeOR";
+const HOOK_ID = "842294167958323220";
+const DISCORD_HOOK_URL = `https://discord.com/api/webhooks/${HOOK_ID}/${process.env.DISCORD_HOOK_TOKEN}`;
 
 const postToDiscord = async (content) =>
-  await axios.post(DISCORD_HOOK, {
+  await axios.post(DISCORD_HOOK_URL, {
     username: "Prediction Bot",
     content,
   });
