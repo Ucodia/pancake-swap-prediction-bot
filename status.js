@@ -15,7 +15,7 @@ const { postToDiscord } = require("./discord");
         startTime,
         "Prediction market is still paused, refreshing in 5 minutes..."
       );
-      setTimeout(pollMarketStatus, 5 * 1000);
+      setTimeout(pollMarketStatus, 5 * 60 * 1000);
     }
 
     previousStatus = paused;
