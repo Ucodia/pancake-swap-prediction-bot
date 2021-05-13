@@ -6,7 +6,8 @@
   "main": "index.js",
   "scripts": {
     "bet": "node bet.js",
-    "claim": "node claim.js"
+    "claim": "node claim.js",
+    "status": "node status.js"
   },
   "dependencies": {
     "axios": "^0.21.1",
