@@ -38,7 +38,7 @@ const printSeparator = (length = 40) =>
         `Round ${previousEpoch} is ${!claimable ? "NOT " : ""}claimable`
       );
     } catch (error) {
-      console.error(error);
+      console.error(error.message);
     }
 
     if (claimable) {
@@ -64,7 +64,7 @@ const printSeparator = (length = 40) =>
             console.error(`😵 Failed to claim round ${previousEpoch}`);
           });
       } catch (error) {
-        console.error(error);
+        console.error(error.message);
       }
     }
 

@@ -1,7 +1,7 @@
 require("dotenv").config();
 const Web3 = require("web3");
 const BnbPricePredictionAbi = require("./abi/BnbPricePrediction.json");
-const { getRandomNodeUrl } = require("./nodeUrls");
+const { getRandomNodeUrl } = require("./utils");
 
 const nodeUrl = getRandomNodeUrl();
 const web3 = new Web3(new Web3.providers.HttpProvider(nodeUrl));
