@@ -2,7 +2,7 @@ const { nodeUrl, web3, account, contract } = require("./config");
 
 const PAYOUT_CAP = 1.7;
 const POOL_THRESHOLD = 3.0;
-const BLOCK_THRESHOLD = 3;
+const BLOCK_THRESHOLD = 4;
 
 const Position = { Bull: "Bull", Bear: "Bear", None: "None" };
 const BetStatus = {
@@ -20,17 +20,10 @@ const weiRatio = 1e18;
 
 const computeBetAmount = (balance) => {
   const balanceBnb = balance / weiRatio;
-  return balanceBnb > 0.1
-    ? 0.02
-    : balanceBnb > 0.2
-    ? 0.03
-    : balanceBnb > 0.3
-    ? 0.04
-    : balanceBnb > 0.4
-    ? 0.05
-    : balanceBnb > 0.5
-    ? 0.06
-    : 0.01;
+  // count whole tenth of BNB in balance
+  const wholeTenth = Math.floor(balanceBnb / 0.1);
+  // base amount is 0.03
+  return wholeTenth * 0.01 + 0.03;
 };
 
 const computeDelay = (remainingBlocks, defaultDelay = 30000) => {
@@ -83,10 +76,9 @@ const printSeparator = (length = 40) =>
   const betsStatus = {};
 
   const autoBet = async () => {
-    // metrics
     const startTime = new Date();
+    let paused = await contract.methods.paused().call();
 
-    const paused = await contract.methods.paused().call();
     if (paused) {
       console.log("\x1Bc");
       console.log("🔮 Prediction Bot 🤖");
@@ -156,6 +148,7 @@ const printSeparator = (length = 40) =>
             })
             .on("error", (error) => {
               betsStatus[epoch] = BetStatus.Failed;
+              console.error(error);
             });
         }
       }
