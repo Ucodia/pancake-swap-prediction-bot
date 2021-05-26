@@ -14,8 +14,8 @@ const printSeparator = (length = 40) =>
 
   const autoClaim = async () => {
     const startTime = new Date();
+    let paused = await contract.methods.paused().call();
 
-    const paused = await contract.methods.paused().call();
     if (paused) {
       console.log(
         startTime,
@@ -27,30 +27,45 @@ const printSeparator = (length = 40) =>
 
     const openEpoch = await contract.methods.currentEpoch().call();
     const previousEpoch = openEpoch - 2;
-    const claimable = await contract.methods
-      .claimable(previousEpoch, account.address)
-      .call();
+    let claimable = false;
 
-    console.log(
-      `Round ${previousEpoch} is ${!claimable ? "NOT " : ""}claimable`
-    );
+    try {
+      claimable = await contract.methods
+        .claimable(previousEpoch, account.address)
+        .call();
+
+      console.log(
+        `Round ${previousEpoch} is ${!claimable ? "NOT " : ""}claimable`
+      );
+    } catch (error) {
+      console.error(error);
+    }
 
     if (claimable) {
       const claimFn = contract.methods.claim(previousEpoch);
       const claimTx = {
         from: account.address,
       };
-      const claimGas = await claimFn.estimateGas(claimTx);
 
-      claimFn
-        .send({ ...claimTx, gasPrice, gas: claimGas })
-        .on("receipt", async (receipt) => {
-          console.log(`💰 Claimed round ${previousEpoch}`);
-          await postToDiscord(`💰 Claimed round ${previousEpoch}`);
-        })
-        .on("error", (error) => {
-          console.log(`😵 Failed to claim round ${previousEpoch}`);
-        });
+      try {
+        const claimGas = await claimFn.estimateGas(claimTx);
+
+        claimFn
+          .send({ ...claimTx, gasPrice, gas: claimGas })
+          .on("receipt", async (receipt) => {
+            const walletBalance = await web3.eth.getBalance(account.address);
+            const message = `💰 Claimed round ${previousEpoch}, balance: ${(
+              walletBalance / 1e18
+            ).toFixed(4)} BNB`;
+            console.log(message);
+            await postToDiscord(message);
+          })
+          .on("error", (error) => {
+            console.error(`😵 Failed to claim round ${previousEpoch}`);
+          });
+      } catch (error) {
+        console.error(error);
+      }
     }
 
     // claim every minute
