@@ -7,11 +7,13 @@
   "scripts": {
     "bet": "node bet.js",
     "claim": "node claim.js",
-    "status": "node status.js"
+    "status": "node status.js",
+    "server": "json-server --watch db.json --id epoch"
   },
   "dependencies": {
     "axios": "^0.21.1",
     "dotenv": "^10.0.0",
+    "json-server": "^0.16.3",
     "lowdb": "^2.1.0",
     "web3": "^1.3.6"
   }
