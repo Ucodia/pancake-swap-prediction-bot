@@ -1,5 +1,5 @@
 {
-  "name": "prediction-bot",
+  "name": "pancake-swap-prediction-bot",
   "version": "1.0.0",
   "author": "Ucodia -> Lionel Ringenbach",
   "license": "MIT",
@@ -8,6 +8,7 @@
     "bet": "node bet.js",
     "claim": "node claim.js",
     "status": "node status.js",
+    "history": "node history.mjs",
     "server": "json-server --watch db.json --id epoch"
   },
   "dependencies": {
