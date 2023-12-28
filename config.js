@@ -6,7 +6,7 @@ const { getRandomNodeUrl } = require("./utils");
 const nodeUrl = getRandomNodeUrl();
 const web3 = new Web3(new Web3.providers.HttpProvider(nodeUrl));
 const account = web3.eth.accounts.privateKeyToAccount(
-  process.env.PEANUT_BUTTER
+  process.env.WALLET_PRIVATE_KEY
 );
 web3.eth.accounts.wallet.add(account);
 web3.eth.defaultAccount = account.address;
